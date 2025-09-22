@@ -1,0 +1,6 @@
+Project Name: Project Nexus - Global Supply Chain Risk Analysis
+Client: Fortune 500 Manufacturing Corporation
+Period of Performance: 2023-Present
+Value: $8M
+
+For this commercial client, we deployed a cloud-based instance of QuantumGrid in AWS to provide real-time analysis of their global supply chain. The system ingests data from shipping manifests, weather feeds, geopolitical news, and internal inventory systems. QuantumGrid's AI models provide predictive alerts on potential disruptions, allowing the client to proactively re-route shipments and mitigate risks. Within the first year, the client reported a 15% reduction in disruption-related costs and a 20% improvement in on-time delivery rates.
