@@ -1,0 +1,4 @@
+We provide a comprehensive training program to ensure our clients are fully equipped to leverage the power of the QuantumGrid platform.
+- **Analyst Training (3 Days)**: A hands-on course for end-users covering data exploration, search, link analysis, and report generation.
+- **Administrator Training (2 Days)**: A technical course for system administrators covering platform configuration, user management, data pipeline monitoring, and basic troubleshooting.
+- **Advanced Training (Custom)**: Custom-tailored training sessions are available for advanced topics such as new AI/ML model development and API integration.

@@ -1,0 +1,25 @@
+services:
+  mcp-rfp-server:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./knowledge_base:/app/knowledge_base
+      - ./outputs:/app/outputs
+      - ./chroma_data:/app/chroma_data
+      - ./scripts:/app/scripts
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - SERVER_NAME=mcp-rfp-server
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+    networks:
+      - rfp-network
+
+networks:
+  rfp-network:
+    driver: bridge
