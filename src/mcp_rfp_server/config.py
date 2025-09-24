@@ -1,5 +1,5 @@
 """
-Configuration management for MCP-RFP Server
+Configuration management for MCP-RFP Server with SharePoint Integration
 """
 import os
 from pathlib import Path
@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings
 
 
 class ServerConfig(BaseSettings):
-    """Unified server configuration"""
+    """Unified server configuration with SharePoint support"""
 
     # Server identity
     server_name: str = Field(default="mcp-rfp-server", env="SERVER_NAME")
@@ -19,8 +19,20 @@ class ServerConfig(BaseSettings):
     google_api_key: str = Field(..., env="GOOGLE_API_KEY")
     gemini_model: str = Field(default="gemini-1.5-flash-latest", env="GEMINI_MODEL")
 
-    # Paths configuration
+    # Knowledge base source configuration
+    knowledge_source: str = Field(default="local", env="KNOWLEDGE_SOURCE")  # "local" or "sharepoint"
+
+    # Local paths configuration (used when knowledge_source="local")
     knowledge_base_path: str = Field(default="./knowledge_base", env="KNOWLEDGE_BASE_PATH")
+
+    # SharePoint configuration (used when knowledge_source="sharepoint")
+    sharepoint_tenant_id: Optional[str] = Field(default=None, env="SHAREPOINT_TENANT_ID")
+    sharepoint_client_id: Optional[str] = Field(default=None, env="SHAREPOINT_CLIENT_ID")
+    sharepoint_client_secret: Optional[str] = Field(default=None, env="SHAREPOINT_CLIENT_SECRET")
+    sharepoint_site_url: Optional[str] = Field(default=None, env="SHAREPOINT_SITE_URL")
+    sharepoint_folder_path: str = Field(default="knowledge_base", env="SHAREPOINT_FOLDER_PATH")
+
+    # Other paths
     chroma_db_path: str = Field(default="./chroma_data", env="CHROMA_DB_PATH")
     output_path: str = Field(default="./outputs", env="OUTPUT_PATH")
 
@@ -29,7 +41,6 @@ class ServerConfig(BaseSettings):
     max_requirements_per_document: int = Field(default=200, env="MAX_REQUIREMENTS_PER_DOCUMENT")
     max_concurrent_requests: int = Field(default=10, env="MAX_CONCURRENT_REQUESTS")
     max_search_results: int = Field(default=50, env="MAX_SEARCH_RESULTS")
-
 
     # NLP and ML settings
     spacy_model: str = Field(default="en_core_web_sm", env="SPACY_MODEL")
@@ -72,7 +83,7 @@ class ServerConfig(BaseSettings):
         return cls()
 
     def get_knowledge_base_path(self) -> Path:
-        """Get knowledge base path as Path object"""
+        """Get knowledge base path as Path object (only for local source)"""
         return Path(self.knowledge_base_path)
 
     def get_chroma_db_path(self) -> Path:
@@ -83,13 +94,41 @@ class ServerConfig(BaseSettings):
         """Get output path as Path object"""
         return Path(self.output_path)
 
+    def is_sharepoint_enabled(self) -> bool:
+        """Check if SharePoint is enabled and properly configured"""
+        return (
+            self.knowledge_source.lower() == "sharepoint" and
+            all([
+                self.sharepoint_tenant_id,
+                self.sharepoint_client_id,
+                self.sharepoint_client_secret,
+                self.sharepoint_site_url
+            ])
+        )
+
+    def get_sharepoint_config(self) -> dict:
+        """Get SharePoint configuration as dictionary"""
+        if not self.is_sharepoint_enabled():
+            raise ValueError("SharePoint is not properly configured")
+
+        return {
+            "tenant_id": self.sharepoint_tenant_id,
+            "client_id": self.sharepoint_client_id,
+            "client_secret": self.sharepoint_client_secret,
+            "site_url": self.sharepoint_site_url,
+            "folder_path": self.sharepoint_folder_path
+        }
+
     def ensure_directories(self):
-        """Ensure all required directories exist"""
+        """Ensure all required directories exist (for local paths only)"""
         directories = [
-            self.get_knowledge_base_path(),
             self.get_chroma_db_path(),
             self.get_output_path()
         ]
+
+        # Only create knowledge_base directory if using local source
+        if self.knowledge_source.lower() == "local":
+            directories.append(self.get_knowledge_base_path())
 
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
@@ -102,9 +141,31 @@ class ServerConfig(BaseSettings):
         if self.max_document_size_mb <= 0:
             raise ValueError("MAX_DOCUMENT_SIZE_MB must be positive")
 
-        # Check that all critical paths exist
-        for path_name in ["knowledge_base_path", "chroma_db_path", "output_path"]:
-            path_value = getattr(self, path_name)
+        # Validate knowledge source configuration
+        if self.knowledge_source.lower() == "sharepoint":
+            if not self.is_sharepoint_enabled():
+                missing_vars = []
+                if not self.sharepoint_tenant_id:
+                    missing_vars.append("SHAREPOINT_TENANT_ID")
+                if not self.sharepoint_client_id:
+                    missing_vars.append("SHAREPOINT_CLIENT_ID")
+                if not self.sharepoint_client_secret:
+                    missing_vars.append("SHAREPOINT_CLIENT_SECRET")
+                if not self.sharepoint_site_url:
+                    missing_vars.append("SHAREPOINT_SITE_URL")
+
+                raise ValueError(f"SharePoint configuration incomplete. Missing: {', '.join(missing_vars)}")
+
+        elif self.knowledge_source.lower() == "local":
+            # Check that local knowledge base path exists
+            if not self.get_knowledge_base_path().exists():
+                raise ValueError(f"Local knowledge base directory does not exist: {self.knowledge_base_path}")
+
+        else:
+            raise ValueError(f"Invalid knowledge_source: {self.knowledge_source}. Must be 'local' or 'sharepoint'")
+
+        # Check that other critical paths exist
+        for path_name, path_value in [("chroma_db_path", self.chroma_db_path), ("output_path", self.output_path)]:
             if not Path(path_value).exists():
                 raise ValueError(f"Required path does not exist: {path_name} = {path_value}")
 

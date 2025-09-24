@@ -1,6 +1,0 @@
-Security is a foundational principle of the QuantumGrid platform. We employ a defense-in-depth strategy that protects data at every layer of the system.
-- **Data Encryption**: All data is encrypted at rest using AES-256 and in transit using FIPS 140-2 validated TLS 1.3 encryption.
-- **Access Control**: We enforce strict Role-Based Access Control (RBAC) and Attribute-Based Access Control (ABAC) to ensure users can only access data they are authorized to see. Multi-Factor Authentication (MFA) is mandatory for all accounts.
-- **Network Security**: The platform is deployed within a hardened virtual private cloud (VPC) with strict firewall rules, intrusion detection/prevention systems (IDS/IPS), and continuous network traffic monitoring.
-- **Auditing and Monitoring**: All user and system actions are logged in an immutable audit trail. These logs are ingested into a SIEM system for continuous monitoring and automated alerting on suspicious activity.
-- **Vulnerability Management**: We conduct regular vulnerability scanning of all system components and have a formal process for patching and remediation that adheres to strict timelines based on vulnerability severity.

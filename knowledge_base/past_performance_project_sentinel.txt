@@ -1,7 +1,0 @@
-Project Name: Project Sentinel
-Client: U.S. Department of Defense (DoD)
-Contract #: W15P7T-22-C-0014
-Period of Performance: 2022-2025
-Value: $15M
-
-This project involved deploying our QuantumGrid platform to provide a unified analytical capability for a critical national security mission. The primary challenge was the integration of over 50 disparate, high-volume data sources. We deployed a secure, air-gapped instance of QuantumGrid and developed custom data connectors. Key achievements include reducing data analysis time by 40%, fusing over 5 petabytes of data, and identifying three previously unknown high-risk threats within the first six months. The system has maintained a 99.99% availability rate.
