@@ -1,1 +1,0 @@
-The QuantumGrid platform is engineered on a modern, cloud-native architecture to ensure scalability, resilience, and security. It is built on a foundation of containerized microservices managed by Kubernetes, allowing for flexible deployment in public cloud (AWS GovCloud, Azure Government), private cloud, or on-premise air-gapped environments.

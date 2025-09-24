@@ -1,5 +1,0 @@
-We offer two tiers of support to ensure the mission success of our clients.
-- **Standard Support**: Includes access to our help desk via email and phone during business hours (9 AM - 5 PM ET), with a 4-hour response time for critical issues.
-- **Premium Support**: Includes 24/7/365 help desk access, a 1-hour response time for critical issues, a dedicated Technical Account Manager (TAM), and proactive system health monitoring.
-
-Our Service Level Agreement (SLA) for platform availability on our managed cloud deployments is 99.9% uptime, calculated on a monthly basis.

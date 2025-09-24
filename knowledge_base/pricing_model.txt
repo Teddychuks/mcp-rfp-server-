@@ -1,6 +1,0 @@
-Our pricing model for the QuantumGrid platform is designed to be flexible and scalable to meet the diverse needs of our clients. The primary pricing structure is an annual subscription based on the number of data processing nodes.
-
-- **Standard Node**: Includes up to 10TB of data ingestion per month and standard support.
-- **High-Performance Node**: Includes up to 50TB of data ingestion per month and premium support.
-
-Volume discounts are available for deployments exceeding 10 nodes. We also offer professional services for custom data connector development and on-site analyst support on a time-and-materials basis.

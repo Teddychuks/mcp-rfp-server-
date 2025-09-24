@@ -1,5 +1,0 @@
-We utilize an Agile Scrum methodology for all software development and implementation projects. This iterative approach allows us to deliver value quickly, adapt to changing requirements, and maintain a high level of transparency with our clients. Our process includes:
-- **Sprints**: We operate in two-week sprints, concluding each with a Sprint Review and Retrospective.
-- **Key Roles**: Each project team includes a dedicated Project Manager, a Certified Scrum Master, a Product Owner, and a cross-functional development team.
-- **Ceremonies**: We adhere to all standard Scrum ceremonies, including Sprint Planning, Daily Stand-ups, Sprint Reviews, and Retrospectives.
-- **Tools**: We leverage industry-standard tools like Jira for backlog management, Confluence for documentation, and Jenkins for continuous integration and continuous deployment (CI/CD).

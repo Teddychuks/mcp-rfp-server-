@@ -1,8 +1,0 @@
-Dr. Evelyn Reed, PMP | Senior Project Manager
-Dr. Reed has over 15 years of experience managing multi-million dollar software projects for DoD clients. She is a certified Project Management Professional (PMP) and holds a Ph.D. in Systems Engineering. Her expertise ensures projects are delivered on time and within budget.
-
-David Chen | Lead Solutions Architect
-David Chen is the lead architect for the QuantumGrid platform. He has 12 years of experience in cloud computing and is an AWS Certified Solutions Architect - Professional. He is an expert in designing highly scalable and secure data platforms using Kubernetes and big data technologies.
-
-Maria Garcia | Lead Data Scientist
-Maria Garcia leads our AI/ML development team. She holds a Master's in Computer Science from Stanford University with a specialization in Artificial Intelligence. Her work focuses on developing novel algorithms for entity resolution and predictive modeling in large-scale graph networks.
