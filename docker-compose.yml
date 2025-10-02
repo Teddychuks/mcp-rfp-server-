@@ -7,52 +7,88 @@ services:
     ports:
       - "8000:8000"
     volumes:
+      # Core application volumes - always mounted
       - ./src:/app/src
-      - ./knowledge_base:/app/knowledge_base  # Only used when KNOWLEDGE_SOURCE=local
       - ./outputs:/app/outputs
       - ./chroma_data:/app/chroma_data
       - ./scripts:/app/scripts
+      # Conditional local knowledge base volume (only needed for local mode)
+#      - ./knowledge_base:/app/knowledge_base
+
     environment:
-      # Core Configuration
+      # Core Configuration - Required
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - SERVER_NAME=mcp-rfp-server
-      - LOG_LEVEL=INFO
-      - DEBUG=false
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - DEBUG=${DEBUG:-false}
 
-      # Knowledge Source Configuration
-      - KNOWLEDGE_SOURCE=${KNOWLEDGE_SOURCE:-local}
+      # Knowledge Source Configuration - Key Setting
+      - KNOWLEDGE_SOURCE=${KNOWLEDGE_SOURCE:-sharepoint}
 
-      # SharePoint Configuration (only used when KNOWLEDGE_SOURCE=sharepoint)
+      # SharePoint Configuration - Required when KNOWLEDGE_SOURCE=sharepoint
       - SHAREPOINT_TENANT_ID=${SHAREPOINT_TENANT_ID}
       - SHAREPOINT_CLIENT_ID=${SHAREPOINT_CLIENT_ID}
       - SHAREPOINT_CLIENT_SECRET=${SHAREPOINT_CLIENT_SECRET}
       - SHAREPOINT_SITE_URL=${SHAREPOINT_SITE_URL}
       - SHAREPOINT_FOLDER_PATH=${SHAREPOINT_FOLDER_PATH:-knowledge_base}
 
-      # Local Knowledge Base (only used when KNOWLEDGE_SOURCE=local)
+      # Local Knowledge Base - Only used when KNOWLEDGE_SOURCE=local
       - KNOWLEDGE_BASE_PATH=${KNOWLEDGE_BASE_PATH:-./knowledge_base}
 
-      # Other Configuration
+      # AI and Processing Configuration
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash-latest}
-      - CHROMA_DB_PATH=${CHROMA_DB_PATH:-./chroma_data}
-      - OUTPUT_PATH=${OUTPUT_PATH:-./outputs}
       - SPACY_MODEL=${SPACY_MODEL:-en_core_web_sm}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+
+      # Data Storage Paths
+      - CHROMA_DB_PATH=${CHROMA_DB_PATH:-./chroma_data}
+      - OUTPUT_PATH=${OUTPUT_PATH:-./outputs}
+
+      # Processing Limits
       - MAX_DOCUMENT_SIZE_MB=${MAX_DOCUMENT_SIZE_MB:-50}
       - MAX_REQUIREMENTS_PER_DOCUMENT=${MAX_REQUIREMENTS_PER_DOCUMENT:-200}
+      - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
+      - MAX_SEARCH_RESULTS=${MAX_SEARCH_RESULTS:-50}
+
+      # Search and Analysis Parameters
       - DEFAULT_SEARCH_LIMIT=${DEFAULT_SEARCH_LIMIT:-5}
       - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.7}
       - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.6}
+
+      # MCP Protocol Settings
       - MCP_PROTOCOL_VERSION=${MCP_PROTOCOL_VERSION:-2024-11-05}
       - ENABLE_MCP_LOGGING=${ENABLE_MCP_LOGGING:-true}
+
     networks:
       - rfp-network
+
+    # Enhanced healthcheck with SharePoint awareness
     healthcheck:
-      test: ["CMD", "python", "-c", "import socket; s = socket.socket(); s.connect(('localhost', 8000)); s.close()"]
+      test: |
+        python -c "
+        import socket
+        import os
+        # Test server port
+        s = socket.socket()
+        s.connect(('localhost', 8000))
+        s.close()
+        # Log current knowledge source
+        print(f'Health check passed - Knowledge source: {os.environ.get(\"KNOWLEDGE_SOURCE\", \"local\")}')
+        "
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+
+    # Resource limits for SharePoint API calls
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
 
 networks:
   rfp-network:
