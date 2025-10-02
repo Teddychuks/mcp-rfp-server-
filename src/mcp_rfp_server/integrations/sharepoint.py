@@ -29,8 +29,6 @@ class SharePointClient:
             return
 
         try:
-            # Create SSL context that skips verification for testing
-            # WARNING: This is not secure for production use
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
@@ -45,7 +43,7 @@ class SharePointClient:
             raise
 
     async def _authenticate(self):
-        """Authenticate with Microsoft Graph API using client credentials"""
+        """Authenticating with Microsoft Graph API using client credentials"""
         auth_url = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/v2.0/token"
 
         data = {
@@ -65,11 +63,9 @@ class SharePointClient:
             logger.info("Successfully authenticated with SharePoint")
 
     async def get_site_id(self) -> str:
-        """Get the SharePoint site ID from the site URL"""
+        """Getting the SharePoint site ID from the site URL"""
         await self.initialize()
 
-        # Extract hostname and site path from URL
-        # Expected format: https://yourdomain.sharepoint.com/sites/sitename
         if '/sites/' in self.site_url:
             hostname = self.site_url.split('/sites/')[0].replace('https://', '')
             site_path = '/sites/' + self.site_url.split('/sites/')[1]
