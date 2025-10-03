@@ -12,8 +12,14 @@ services:
       - ./outputs:/app/outputs
       - ./chroma_data:/app/chroma_data
       - ./scripts:/app/scripts
-      # Conditional local knowledge base volume (only needed for local mode)
-#      - ./knowledge_base:/app/knowledge_base
+      - ./token.json:/app/token.json
+
+      # --- Volumes for Google Drive Authentication ---
+      # Mounting the credentials file (read-only for security)
+      - ./credentials.json:/app/credentials.json:ro
+      # Mount the token file to persist login across restarts
+      - ./token.json:/app/token.json
+      # -----------------------------------------------
 
     environment:
       # Core Configuration - Required
@@ -22,8 +28,8 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - DEBUG=${DEBUG:-false}
 
-      # Knowledge Source Configuration - Key Setting
-      - KNOWLEDGE_SOURCE=${KNOWLEDGE_SOURCE:-sharepoint}
+      # Knowledge Source Configuration - "local", "sharepoint", or "gdrive"
+      - KNOWLEDGE_SOURCE=${KNOWLEDGE_SOURCE:-gdrive}
 
       # SharePoint Configuration - Required when KNOWLEDGE_SOURCE=sharepoint
       - SHAREPOINT_TENANT_ID=${SHAREPOINT_TENANT_ID}
@@ -32,17 +38,19 @@ services:
       - SHAREPOINT_SITE_URL=${SHAREPOINT_SITE_URL}
       - SHAREPOINT_FOLDER_PATH=${SHAREPOINT_FOLDER_PATH:-knowledge_base}
 
-      # Local Knowledge Base - Only used when KNOWLEDGE_SOURCE=local
-      - KNOWLEDGE_BASE_PATH=${KNOWLEDGE_BASE_PATH:-./knowledge_base}
+      # --- Google Drive Configuration - Required when KNOWLEDGE_SOURCE=gdrive ---
+      - GDRIVE_KNOWLEDGE_BASE_FOLDER_ID=${GDRIVE_KNOWLEDGE_BASE_FOLDER_ID}
+      # -------------------------------------------------------------------------
 
       # AI and Processing Configuration
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash-latest}
       - SPACY_MODEL=${SPACY_MODEL:-en_core_web_sm}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
 
-      # Data Storage Paths
-      - CHROMA_DB_PATH=${CHROMA_DB_PATH:-./chroma_data}
-      - OUTPUT_PATH=${OUTPUT_PATH:-./outputs}
+      # Data Storage Paths (these are paths inside the container)
+      - CHROMA_DB_PATH=/app/chroma_data
+      - OUTPUT_PATH=/app/outputs
+      - KNOWLEDGE_BASE_PATH=/app/knowledge_base
 
       # Processing Limits
       - MAX_DOCUMENT_SIZE_MB=${MAX_DOCUMENT_SIZE_MB:-50}
@@ -50,19 +58,9 @@ services:
       - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
       - MAX_SEARCH_RESULTS=${MAX_SEARCH_RESULTS:-50}
 
-      # Search and Analysis Parameters
-      - DEFAULT_SEARCH_LIMIT=${DEFAULT_SEARCH_LIMIT:-5}
-      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.7}
-      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.6}
-
-      # MCP Protocol Settings
-      - MCP_PROTOCOL_VERSION=${MCP_PROTOCOL_VERSION:-2024-11-05}
-      - ENABLE_MCP_LOGGING=${ENABLE_MCP_LOGGING:-true}
-
     networks:
       - rfp-network
 
-    # Enhanced healthcheck with SharePoint awareness
     healthcheck:
       test: |
         python -c "
@@ -79,8 +77,8 @@ services:
       timeout: 15s
       retries: 3
       start_period: 60s
+    # --------------------------
 
-    # Resource limits for SharePoint API calls
     deploy:
       resources:
         limits:

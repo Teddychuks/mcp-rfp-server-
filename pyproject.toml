@@ -38,6 +38,10 @@ aiofiles = "^23.0.0"
 python-dotenv = "^1.0.0"
 structlog = "^23.0.0"
 
+google-api-python-client = "^2.126.0"
+google-auth-httplib2 = "^0.2.0"
+google-auth-oauthlib = "^1.2.0"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 pytest-asyncio = "^0.21.0"

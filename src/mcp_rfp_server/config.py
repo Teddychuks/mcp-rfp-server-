@@ -1,15 +1,15 @@
 """
-Configuration management for MCP-RFP Server with SharePoint Integration
+Configuration management for MCP-RFP Server with SharePoint & Google Drive Integration
 """
 import os
 from pathlib import Path
 from typing import List, Optional
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 
 class ServerConfig(BaseSettings):
-    """Unified server configuration with SharePoint support"""
+    """Unified server configuration with SharePoint and Google Drive support"""
 
     # Server identity
     server_name: str = Field(default="mcp-rfp-server", env="SERVER_NAME")
@@ -20,7 +20,7 @@ class ServerConfig(BaseSettings):
     gemini_model: str = Field(default="gemini-1.5-flash-latest", env="GEMINI_MODEL")
 
     # Knowledge base source configuration
-    knowledge_source: str = Field(default="local", env="KNOWLEDGE_SOURCE")  # "local" or "sharepoint"
+    knowledge_source: str = Field(default="local", env="KNOWLEDGE_SOURCE")  # "local", "sharepoint", or "gdrive"
 
     # Local paths configuration (used when knowledge_source="local")
     knowledge_base_path: str = Field(default="./knowledge_base", env="KNOWLEDGE_BASE_PATH")
@@ -31,6 +31,9 @@ class ServerConfig(BaseSettings):
     sharepoint_client_secret: Optional[str] = Field(default=None, env="SHAREPOINT_CLIENT_SECRET")
     sharepoint_site_url: Optional[str] = Field(default=None, env="SHAREPOINT_SITE_URL")
     sharepoint_folder_path: str = Field(default="knowledge_base", env="SHAREPOINT_FOLDER_PATH")
+
+    # Google Drive configuration (used when knowledge_source="gdrive")
+    gdrive_knowledge_base_folder_id: Optional[str] = Field(default=None, env="GDRIVE_KNOWLEDGE_BASE_FOLDER_ID")
 
     # Other paths
     chroma_db_path: str = Field(default="./chroma_data", env="CHROMA_DB_PATH")
@@ -58,14 +61,9 @@ class ServerConfig(BaseSettings):
     # Knowledge base categories
     knowledge_categories: List[str] = Field(
         default=[
-            "company_overview",
-            "past_performance",
-            "technical_capabilities",
-            "security_compliance",
-            "management_approach",
-            "quality_assurance",
-            "personnel_bios",
-            "product_info"
+            "company_overview", "past_performance", "technical_capabilities",
+            "security_compliance", "management_approach", "quality_assurance",
+            "personnel_bios", "product_info"
         ]
     )
 
@@ -83,7 +81,7 @@ class ServerConfig(BaseSettings):
         return cls()
 
     def get_knowledge_base_path(self) -> Path:
-        """Get knowledge base path as Path object (only for local source)"""
+        """Get knowledge base path as Path object"""
         return Path(self.knowledge_base_path)
 
     def get_chroma_db_path(self) -> Path:
@@ -95,78 +93,69 @@ class ServerConfig(BaseSettings):
         return Path(self.output_path)
 
     def is_sharepoint_enabled(self) -> bool:
-        """Check if SharePoint is enabled and properly configured"""
-        return (
-            self.knowledge_source.lower() == "sharepoint" and
-            all([
-                self.sharepoint_tenant_id,
-                self.sharepoint_client_id,
-                self.sharepoint_client_secret,
-                self.sharepoint_site_url
-            ])
-        )
+        """Check if SharePoint is the configured source."""
+        return self.knowledge_source.lower() == "sharepoint"
+
+    def is_gdrive_enabled(self) -> bool:
+        """Check if Google Drive is the configured source."""
+        return self.knowledge_source.lower() == "gdrive"
 
     def get_sharepoint_config(self) -> dict:
-        """Get SharePoint configuration as dictionary"""
+        """Get SharePoint configuration as a dictionary."""
         if not self.is_sharepoint_enabled():
-            raise ValueError("SharePoint is not properly configured")
-
+            raise ValueError("SharePoint source is not enabled.")
         return {
             "tenant_id": self.sharepoint_tenant_id,
             "client_id": self.sharepoint_client_id,
             "client_secret": self.sharepoint_client_secret,
             "site_url": self.sharepoint_site_url,
-            "folder_path": self.sharepoint_folder_path
+            "folder_path": self.sharepoint_folder_path,
+        }
+
+    def get_gdrive_config(self) -> dict:
+        """Get Google Drive configuration as a dictionary."""
+        if not self.is_gdrive_enabled():
+            raise ValueError("Google Drive source is not enabled.")
+        return {
+            "folder_id": self.gdrive_knowledge_base_folder_id
         }
 
     def ensure_directories(self):
-        """Ensure all required directories exist (for local paths only)"""
+        """Ensure all required local directories exist."""
         directories = [
             self.get_chroma_db_path(),
             self.get_output_path()
         ]
-
-        # Only create knowledge_base directory if using local source
         if self.knowledge_source.lower() == "local":
             directories.append(self.get_knowledge_base_path())
 
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
 
-    def validate_configuration(self) -> bool:
-        """Validate configuration settings"""
+    @model_validator(mode='after')
+    def validate_configuration(self) -> 'ServerConfig':
+        """Validate the entire configuration after loading."""
         if not self.google_api_key:
-            raise ValueError("GOOGLE_API_KEY is required")
+            raise ValueError("GOOGLE_API_KEY is a required environment variable.")
 
-        if self.max_document_size_mb <= 0:
-            raise ValueError("MAX_DOCUMENT_SIZE_MB must be positive")
+        source = self.knowledge_source.lower()
 
-        # Validate knowledge source configuration
-        if self.knowledge_source.lower() == "sharepoint":
-            if not self.is_sharepoint_enabled():
-                missing_vars = []
-                if not self.sharepoint_tenant_id:
-                    missing_vars.append("SHAREPOINT_TENANT_ID")
-                if not self.sharepoint_client_id:
-                    missing_vars.append("SHAREPOINT_CLIENT_ID")
-                if not self.sharepoint_client_secret:
-                    missing_vars.append("SHAREPOINT_CLIENT_SECRET")
-                if not self.sharepoint_site_url:
-                    missing_vars.append("SHAREPOINT_SITE_URL")
+        if source == "sharepoint":
+            sp_vars = [
+                self.sharepoint_tenant_id, self.sharepoint_client_id,
+                self.sharepoint_client_secret, self.sharepoint_site_url
+            ]
+            if not all(sp_vars):
+                raise ValueError("For SharePoint source, all SHAREPOINT_* variables are required.")
 
-                raise ValueError(f"SharePoint configuration incomplete. Missing: {', '.join(missing_vars)}")
+        elif source == "gdrive":
+            if not self.gdrive_knowledge_base_folder_id:
+                raise ValueError("For Google Drive source, GDRIVE_KNOWLEDGE_BASE_FOLDER_ID is required.")
 
-        elif self.knowledge_source.lower() == "local":
-            # Check that local knowledge base path exists
-            if not self.get_knowledge_base_path().exists():
-                raise ValueError(f"Local knowledge base directory does not exist: {self.knowledge_base_path}")
+        elif source == "local":
+            pass
 
         else:
-            raise ValueError(f"Invalid knowledge_source: {self.knowledge_source}. Must be 'local' or 'sharepoint'")
+            raise ValueError(f"Invalid KNOWLEDGE_SOURCE: '{self.knowledge_source}'. Must be 'local', 'sharepoint', or 'gdrive'.")
 
-        # Check that other critical paths exist
-        for path_name, path_value in [("chroma_db_path", self.chroma_db_path), ("output_path", self.output_path)]:
-            if not Path(path_value).exists():
-                raise ValueError(f"Required path does not exist: {path_name} = {path_value}")
-
-        return True
+        return self
