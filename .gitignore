@@ -44,4 +44,4 @@ Thumbs.db
 ._*
 poetry.lock
 credentials.json
-token.json
+token.jsoncredentials.json
