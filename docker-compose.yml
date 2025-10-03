@@ -12,10 +12,9 @@ services:
       - ./outputs:/app/outputs
       - ./chroma_data:/app/chroma_data
       - ./scripts:/app/scripts
-      - ./token.json:/app/token.json
 
       # --- Volumes for Google Drive Authentication ---
-      # Mounting the credentials file (read-only for security)
+      # Mount the credentials file (read-only for security)
       - ./credentials.json:/app/credentials.json:ro
       # Mount the token file to persist login across restarts
       - ./token.json:/app/token.json
@@ -58,35 +57,14 @@ services:
       - MAX_CONCURRENT_REQUESTS=${MAX_CONCURRENT_REQUESTS:-10}
       - MAX_SEARCH_RESULTS=${MAX_SEARCH_RESULTS:-50}
 
-    networks:
-      - rfp-network
+      # Search and Analysis Parameters
+      - DEFAULT_SEARCH_LIMIT=${DEFAULT_SEARCH_LIMIT:-5}
+      - SIMILARITY_THRESHOLD=${SIMILARITY_THRESHOLD:-0.7}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD:-0.6}
 
-    healthcheck:
-      test: |
-        python -c "
-        import socket
-        import os
-        # Test server port
-        s = socket.socket()
-        s.connect(('localhost', 8000))
-        s.close()
-        # Log current knowledge source
-        print(f'Health check passed - Knowledge source: {os.environ.get(\"KNOWLEDGE_SOURCE\", \"local\")}')
-        "
-      interval: 30s
-      timeout: 15s
-      retries: 3
-      start_period: 60s
-    # --------------------------
-
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
-          memory: 1G
-          cpus: '0.5'
+      # MCP Protocol Settings
+      - MCP_PROTOCOL_VERSION=${MCP_PROTOCOL_VERSION:-2024-11-05}
+      - ENABLE_MCP_LOGGING=${ENABLE_MCP_LOGGING:-true}
 
 networks:
   rfp-network:
